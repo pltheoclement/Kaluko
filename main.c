@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    main.c
-  * @author  Samuel Poiraud Modifié par Théophane Durand et Rémi Gandrillon
+  * @author  Samuel Poiraud ModifiÃ© par ThÃ©ophane Durand et RÃ©mi Gandrillon
   * @version V2.0 Kaluko edition
   * @date    28/01/2019
   * @brief   Fonction main
@@ -18,15 +18,15 @@
 #include "stm32f1_timer.h"
 #include "test.h"
 
-//Librairies ajoutées pour notre projet
-#include "gps.h" //Permet la gestion des trams reçues par le GPS
+//Librairies ajoutÃ©es pour notre projet
+#include "gps.h" //Permet la gestion des trams reÃ§ues par le GPS
 #include "WS2812S.h" //Permet la gestion du ruban de led
-#include "systick.h" //Permet les innterruptuins à certain intervales de temps
+#include "systick.h" //Permet les innterruptuins Ã  certain intervales de temps
 
 
 /**
- * Structure à 4 champs pour la gestion de la machine à état.
- * Cette sutructure peut contenir tous les états de la machine à état
+ * Structure Ã  4 champs pour la gestion de la machine Ã  Ã©tat.
+ * Cette sutructure peut contenir tous les Ã©tats de la machine Ã  Ã©tat
  */
 typedef enum
 {
@@ -38,12 +38,12 @@ typedef enum
 static volatile led_state_e led_state;
 
 /**
- * Variable globale qui prend comme valeur les charcactères envoyés par le téléphone
+ * Variable globale qui prend comme valeur les charcactÃ¨res envoyÃ©s par le tÃ©lÃ©phone
  */
 static volatile uint8_t commandeBluetooth;
 
 /**
- * Déclaration du prototype des fonctions (détaillées plus bas)
+ * DÃ©claration du prototype des fonctions (dÃ©taillÃ©es plus bas)
  */
 void process_ms(void);
 void state_machine(uint8_t modeFonctionnement);
@@ -55,33 +55,36 @@ void gps(void);
  */
 int main(void)
 {
+	int i;
+	int j;
+	int k;
 	HAL_Init();			//Initialisation de la couche logicielle HAL (Hardware Abstraction Layer)
-	BSP_GPIO_Enable();	//Activation des périphériques GPIO
+	BSP_GPIO_Enable();	//Activation des pÃ©riphÃ©riques GPIO
 	SYS_ClockConfig();		//Configuration des horloges.
 
-	//ajoute la fonction process_ms à la liste des fonctions à appeler à chaque ms.
+	//ajoute la fonction process_ms Ã  la liste des fonctions Ã  appeler Ã  chaque ms.
 	Systick_add_callback_function(&process_ms);
 
 
 	/**
 	 * Initialisation du port de la led de bluetooth
-	 * Lorsque la connection est établie cette LED s'allume, sinon elle clignotte
+	 * Lorsque la connection est Ã©tablie cette LED s'allume, sinon elle clignotte
 	 */
 	BSP_GPIO_PinCfg(LED_BC,GPIO_MODE_OUTPUT_PP,GPIO_PULLUP,GPIO_SPEED_FREQ_HIGH);
 
 	/**
 	 * Initialisation des pins Enable des haut-parleurs
-	 * On fixe cette valeur à 1 dés l'initialisation du programme pour pouvoir à tout instant mettre de la musique par les haut-parleurs
+	 * On fixe cette valeur Ã  1 dÃ©s l'initialisation du programme pour pouvoir Ã  tout instant mettre de la musique par les haut-parleurs
 	 */
 	BSP_GPIO_PinCfg(GPIOB, GPIO_PIN_12,GPIO_MODE_OUTPUT_PP,GPIO_PULLUP,GPIO_SPEED_FREQ_HIGH);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 1);
 
-	//Initialisation de l'UART1 à la vitesse de 115200 bauds/secondes (92kbits/s) PB6 : Tx  | PB7 : Rx.
-	UART_init(UART3_ID,9600); //L'UART 3 est branché au GPS pour recevoir les trams des satélites
-	UART_init(UART2_ID,9600); //L'UART 2 est connecté au bluetooth de controle, afin de recevoir les informations du téléphone
-	UART_init(UART1_ID,9600); //L'UART 1 n'est finalement pas utilisé, il est connecté au module bluetooth audio
+	//Initialisation de l'UART1 Ã  la vitesse de 115200 bauds/secondes (92kbits/s) PB6 : Tx  | PB7 : Rx.
+	UART_init(UART3_ID,9600); //L'UART 3 est branchÃ© au GPS pour recevoir les trams des satÃ©lites
+	UART_init(UART2_ID,9600); //L'UART 2 est connectÃ© au bluetooth de controle, afin de recevoir les informations du tÃ©lÃ©phone
+	UART_init(UART1_ID,9600); //L'UART 1 n'est finalement pas utilisÃ©, il est connectÃ© au module bluetooth audio
 
-	//"Indique que les printf sortent vers le périphérique UART2."
+	//"Indique que les printf sortent vers le pÃ©riphÃ©rique UART2."
 	SYS_set_std_usart(UART2_ID, UART2_ID, UART2_ID);
 
 	//On initialise le ruban de LEDs
@@ -89,36 +92,36 @@ int main(void)
 	uint8_t i;
 	uint32_t pixels[NBLED];
 
-	//On éteint le ruban de LED pour ne pas avoir des "restes" des dernières instructions données
+	//On Ã©teint le ruban de LED pour ne pas avoir des "restes" des derniÃ¨res instructions donnÃ©es
 	for(i = 0; i < NBLED; i++)
 	{
 		pixels[i] = OFF;
 	}
 	LED_MATRIX_display(pixels, NBLED);
 
-	//On initilaise le caractère à 0 pour les données reçues par le bluetooth.
+	//On initilaise le caractÃ¨re Ã  0 pour les donnÃ©es reÃ§ues par le bluetooth.
 	commandeBluetooth = '0';
 
-	//On initialise le mode de fonctionnement à n pour être dés le début en mode nominal
+	//On initialise le mode de fonctionnement Ã  n pour Ãªtre dÃ©s le dÃ©but en mode nominal
 	uint8_t modeFonctionnement = 'n';
 
 	//Tache du fond d programme
 	while(1)
 	{
 
-		modeFonctionnement = bluetoothControl();  //On lit la valeur reçue par le bluetooth
-		state_machine(modeFonctionnement);		//On définit l'état de la machine à état en fonction de la donnée reçue par bluetooth
-		gps();		//On lit les données reçues par le GPS et on les traite
+		modeFonctionnement = bluetoothControl();  //On lit la valeur reÃ§ue par le bluetooth
+		state_machine(modeFonctionnement);		//On dÃ©finit l'Ã©tat de la machine Ã  Ã©tat en fonction de la donnÃ©e reÃ§ue par bluetooth
+		gps();		//On lit les donnÃ©es reÃ§ues par le GPS et on les traite
 	}
 }
 
 /**
- * Fonction décrivant la machine à état de notre système
+ * Fonction dÃ©crivant la machine Ã  Ã©tat de notre systÃ¨me
  */
 void state_machine(uint8_t modeFonctionnement)
 {
 	/**
-	 * Structure décrvant les états possibles du système
+	 * Structure dÃ©crvant les Ã©tats possibles du systÃ¨me
 	 */
 	typedef enum
 	{
@@ -128,13 +131,13 @@ void state_machine(uint8_t modeFonctionnement)
 		CLIGNOGAUCHE
 	}state_e;
 
-	//On initialise l'état de la machine à INIT
+	//On initialise l'Ã©tat de la machine Ã  INIT
 	static state_e state = INIT;
 
 	/**
-	 * Déroulement de la machine à état.
-	 * On de tous les états on peut passer à tous les autres.
-	 *Excépté l'état INIT qui n'est appelé à l'initialisation du programme
+	 * DÃ©roulement de la machine Ã  Ã©tat.
+	 * On de tous les Ã©tats on peut passer Ã  tous les autres.
+	 *ExcÃ©ptÃ© l'Ã©tat INIT qui n'est appelÃ© Ã  l'initialisation du programme
 	 */
 	switch(state)
 	{
@@ -190,7 +193,7 @@ void state_machine(uint8_t modeFonctionnement)
 			break;
 	}
 
-	//Commande de la led de controle pour la témoin lumineux de la connection bluetooth
+	//Commande de la led de controle pour la tÃ©moin lumineux de la connection bluetooth
 	if(modeFonctionnement == 'b')
 	{
 		commandeBluetooth = 'b';
@@ -208,7 +211,7 @@ void state_machine(uint8_t modeFonctionnement)
 
 
 /**
- * Récéption des donées GPS et traiement pour être envoyées au téléphone
+ * RÃ©cÃ©ption des donÃ©es GPS et traiement pour Ãªtre envoyÃ©es au tÃ©lÃ©phone
  */
 void gps(void)
 {
@@ -234,7 +237,7 @@ void gps(void)
 }*/
 
 /**
- * Fonction permettant de récupérer le charactère envoyé par le téléphone
+ * Fonction permettant de rÃ©cupÃ©rer le charactÃ¨re envoyÃ© par le tÃ©lÃ©phone
  */
 uint8_t bluetoothControl(void)
 {
@@ -244,14 +247,14 @@ uint8_t bluetoothControl(void)
 }
 
 /**
- * Fonction appelée toutes les milisecondes
- * Elle gère le clignottement et l'allumage des led
+ * Fonction appelÃ©e toutes les milisecondes
+ * Elle gÃ¨re le clignottement et l'allumage des led
  */
 void process_ms(void)
 {
 	static uint32_t t_led = 0;
 	//static uint32_t num_led = 0;
-	t_led++; //Variable permettant de compter le temps elle s'incrémente toutes les milisecondes
+	t_led++; //Variable permettant de compter le temps elle s'incrÃ©mente toutes les milisecondes
 
 	static uint32_t pixels[NBLED];
 
@@ -259,31 +262,31 @@ void process_ms(void)
 		{
 			if(led_state == LED_NOMINAL)
 			{
-				for(int i = 0; i < NBLED; i++){ //Allumage de l'arrière du casque en rouge en mode nominal
+				for(int i = 0; i < NBLED; i++){ //Allumage de l'arriÃ¨re du casque en rouge en mode nominal
 					if(i <= 9 || i >= 40){
 						pixels[i] = RED;
 					}
 					else if(i >= 15 && i <= 34){ //Allumage de l'avant du casque en blanc en mode nominal
 						pixels[i] = WHITE;
 					}
-					else{  //Les leds sur le coté restent éteintes
+					else{  //Les leds sur le cotÃ© restent Ã©teintes
 						pixels[i] = OFF;
 					}
 				}
 			}
-			else if(led_state == LED_CLIGNO_GAUCHE)  //Allumage de du coté gauche du casque en jaune en mode cligno gauche
+			else if(led_state == LED_CLIGNO_GAUCHE)  //Allumage de du cotÃ© gauche du casque en jaune en mode cligno gauche
 			{
 				for(int i = 0; i < NBLED; i++){
 					if(i <= 2 || i >= 47){
 						pixels[i] = RED;
 					}
-					else if(i >= 22 && i <= 27){ //Allumage de du coté avant du casque en blanc en mode cligno gauche
+					else if(i >= 22 && i <= 27){ //Allumage de du cotÃ© avant du casque en blanc en mode cligno gauche
 						pixels[i] = WHITE;
 					}
-					else if(i > 27 && i < 47){ //Allumage de du coté arrière du casque en rouge en mode cligno gauche
+					else if(i > 27 && i < 47){ //Allumage de du cotÃ© arriÃ¨re du casque en rouge en mode cligno gauche
 						pixels[i] = YELLOW;
 					}
-					else if(i > 2 && i < 22){ //Rest edes leds éteintes
+					else if(i > 2 && i < 22){ //Rest edes leds Ã©teintes
 						pixels[i] = OFF;
 					}
 				}
@@ -305,7 +308,7 @@ void process_ms(void)
 					}
 				}
 			}
-			if(commandeBluetooth != 'b') //Clignottement du témoin lumineux lorsque la connection bluetooth n'est pas faite
+			if(commandeBluetooth != 'b') //Clignottement du tÃ©moin lumineux lorsque la connection bluetooth n'est pas faite
 			{
 				HAL_GPIO_WritePin(LED_BC, 0);
 			}
@@ -315,13 +318,13 @@ void process_ms(void)
 		if(t_led == 400)
 		{
 			t_led = 0;
-			if(led_state == LED_NOMINAL)  //On éteint toutes les leds pour l'effet de clignottement
+			if(led_state == LED_NOMINAL)  //On Ã©teint toutes les leds pour l'effet de clignottement
 			{
 				for(int i = 0; i < NBLED; i++){
 					pixels[i] = OFF;
 				}
 			}
-			else if(led_state == LED_CLIGNO_GAUCHE)  //On éteint que les leds aunes pour faire clignotter le coté du casuqe sans faire clignotter l'avant et l'arrière
+			else if(led_state == LED_CLIGNO_GAUCHE)  //On Ã©teint que les leds aunes pour faire clignotter le cotÃ© du casuqe sans faire clignotter l'avant et l'arriÃ¨re
 			{
 				for(int i = 0; i < NBLED; i++){
 					if(i > 27 && i < 47){
@@ -337,7 +340,7 @@ void process_ms(void)
 					}
 				}
 			}
-			if(commandeBluetooth != 'b')  //Clignottement du témoin lumineux lorsque la connection bluetooth n'est pas faite
+			if(commandeBluetooth != 'b')  //Clignottement du tÃ©moin lumineux lorsque la connection bluetooth n'est pas faite
 			{
 				HAL_GPIO_WritePin(LED_BC, 1);
 			}
