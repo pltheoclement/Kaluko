@@ -53,11 +53,10 @@ void gps(void);
 /**
  * Fonction principale du programme
  */
-int main(void)
+main(void)
 {
 	int i;
 	int j;
-	k;
 	HAL_Init();			//Initialisation de la couche logicielle HAL (Hardware Abstraction Layer)
 	BSP_GPIO_Enable();	//Activation des périphériques GPIO
 	SYS_ClockConfig();		//Configuration des horloges.
