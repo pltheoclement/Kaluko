@@ -57,7 +57,7 @@ int main(void)
 {
 	int i;
 	int j;
-	int k;
+	k;
 	HAL_Init();			//Initialisation de la couche logicielle HAL (Hardware Abstraction Layer)
 	BSP_GPIO_Enable();	//Activation des périphériques GPIO
 	SYS_ClockConfig();		//Configuration des horloges.
